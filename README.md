@@ -36,6 +36,6 @@ More info about project:
 ## Installation
 - Clone the repo in your local.
 - Go to each directory in console and write: ```yarn install ```
- -Run backend server (console in its directory) with  ```yarn run ```, the address is ```localhost:8000```
- -Run frontend server (console in its directory) with  ```yarn run ```, the address is ```localhost:3000```
+- Run backend server (console in its directory) with  ```yarn run ```, the address is ```localhost:8000```
+- Run frontend server (console in its directory) with  ```yarn run ```, the address is ```localhost:3000```
 -Enjoy!
