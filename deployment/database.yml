@@ -1,0 +1,64 @@
+# kubectl exec -it soundxdatabasestatefulset-0 -c soundx-database -- mongo --eval 'rs.initiate({ _id: "MainRepSet", version: 1, members: [ { _id: 0, host: "soundxdatabasestatefulset-0.soundxdatabaseservice.default.svc.cluster.local:27017" } ] })'
+
+# kubectl exec soundxdatabasestatefulset-0 -c soundx-database -- mongo --eval 'db.getSiblingDB("admin").createUser({ user: "main_admin", pwd: "12345", roles: [ { role: "root", db: "admin" } ] });'
+
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: soundxdatabasestatefulset
+spec:
+  serviceName: soundxdatabaseservice
+  replicas: 1
+  selector:
+    matchLabels:
+      role: soundxmongolabel
+  template:
+    metadata:
+      labels:
+        role: soundxmongolabel
+        replicaSet: MainRepSet
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: replicaSet
+                      operator: In
+                      values:
+                        - MainRepSet
+                topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: soundx-database
+          image: mongo
+          command:
+            - "mongod"
+            - "--wiredTigerCacheSizeGB"
+            - "0.1"
+            - "--bind_ip"
+            - "0.0.0.0"
+            - "--replSet"
+            - "MainRepSet"
+          resources:
+            requests:
+              cpu: 0.2
+              memory: 200Mi
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: soundxdatabasevolumeclaim
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: soundxdatabasevolumeclaim
+        annotations:
+          volume.beta.kubernetes.io/storage-class: "standard"
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
